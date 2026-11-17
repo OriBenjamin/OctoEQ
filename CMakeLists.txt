@@ -10,3 +10,6 @@ set_target_properties(octoeq_dsp PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 add_executable(octoeq_tests tests/dsp_tests.cpp)
 target_link_libraries(octoeq_tests PRIVATE octoeq_dsp)
+target_sources(octoeq_dsp PRIVATE Source/dsp/EqEngine.cpp)
+add_executable(octoeq_engine_tests tests/engine_tests.cpp)
+target_link_libraries(octoeq_engine_tests PRIVATE octoeq_dsp)
