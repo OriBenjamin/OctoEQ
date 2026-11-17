@@ -158,15 +158,18 @@ void EqEngine::process(float* const* ch, int numCh, int numSamples) {
     }
 }
 
+double bandResponseDb(const BandSettings& b, float scale, double freq, double sampleRate) {
+    if (!b.enabled) return 0;
+    const double g = typeUsesGain(b.type) ? double(b.gainDb) * scale : double(b.gainDb);
+    double sum = 0;
+    for (int st = 0; st < stagesFor(b.type); ++st)
+        sum += magnitudeDb(designStage(b.type, st, b.freq, g, b.q, sampleRate), freq, sampleRate);
+    return sum;
+}
+
 double EqEngine::bandResponseDb(int set, int band, double freq) const {
     if (set < 0 || set >= kNumSets || band < 0 || band >= kNumBands) return 0;
-    const auto& t = target[set][band];
-    if (!t.enabled) return 0;
-    const double g = effectiveGain(set, band, t.gainDb);
-    double sum = 0;
-    for (int st = 0; st < stagesFor(t.type); ++st)
-        sum += magnitudeDb(designStage(t.type, st, t.freq, g, t.q, sr), freq, sr);
-    return sum;
+    return octoeq::bandResponseDb(target[set][band], scale, freq, sr);
 }
 
 double EqEngine::responseDb(int set, double freq) const {

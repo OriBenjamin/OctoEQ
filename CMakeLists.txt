@@ -40,7 +40,8 @@ if(NOT OCTOEQ_TESTS_ONLY)
         AU_MAIN_TYPE kAudioUnitType_Effect
         VST3_CATEGORIES Fx EQ)
 
-    target_sources(OctoEQ PRIVATE Source/PluginProcessor.cpp)
+    target_sources(OctoEQ PRIVATE Source/PluginProcessor.cpp Source/PluginEditor.cpp Source/ui/EqDisplay.cpp Source/ui/BandStrip.cpp)
+target_include_directories(OctoEQ PRIVATE Source)
     target_compile_definitions(OctoEQ PUBLIC
         JUCE_WEB_BROWSER=0 JUCE_USE_CURL=0 JUCE_VST3_CAN_REPLACE_VST2=0
         JUCE_DISPLAY_SPLASH_SCREEN=0)
@@ -51,4 +52,10 @@ if(NOT OCTOEQ_TESTS_ONLY)
     add_executable(octoeq_proc_tests tests/processor_tests.cpp)
     target_link_libraries(octoeq_proc_tests PRIVATE OctoEQ octoeq_dsp juce::juce_audio_utils juce::juce_dsp)
     target_include_directories(octoeq_proc_tests PRIVATE Source)
+endif()
+
+if(NOT OCTOEQ_TESTS_ONLY)
+    add_executable(octoeq_editor_tests tests/editor_tests.cpp)
+    target_link_libraries(octoeq_editor_tests PRIVATE OctoEQ octoeq_dsp juce::juce_audio_utils juce::juce_dsp)
+    target_include_directories(octoeq_editor_tests PRIVATE Source)
 endif()

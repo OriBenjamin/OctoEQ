@@ -19,6 +19,8 @@ struct BandSettings {
 // Factory defaults per band index 0..7 (see design doc).
 BandSettings defaultBand(int band);
 bool typeUsesGain(FilterType t);
+// Response of one band in dB at `freq`; `scale` multiplies gain for bell/shelf types. 0 when disabled.
+double bandResponseDb(const BandSettings& b, float scale, double freq, double sampleRate);
 
 class EqEngine {
 public:

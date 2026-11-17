@@ -25,6 +25,15 @@ static juce::NormalisableRange<float> logRange(float lo, float hi, float interva
              [interval](float s, float e, float v) { return juce::jlimit(s, e, interval > 0 ? std::round(v / interval) * interval : v); } };
 }
 
+static juce::String freqText(float v, int) {
+    return v < 1000.0f ? juce::String(juce::roundToInt(v)) + " Hz" : juce::String(v / 1000.0f, 2) + " kHz";
+}
+static float freqFromText(const juce::String& t) {
+    const float v = t.getFloatValue();
+    return t.containsIgnoreCase("k") ? v * 1000.0f : v;
+}
+static juce::String dbText(float v, int) { return (v >= 0 ? "+" : "") + juce::String(v, 1) + " dB"; }
+
 const juce::StringArray& filterTypeNames() {
     static const juce::StringArray names { "Low Cut 12", "Low Cut 48", "Low Shelf", "Bell", "Notch", "High Shelf", "High Cut 12", "High Cut 48" };
     return names;
@@ -45,18 +54,19 @@ juce::AudioProcessorValueTreeState::ParameterLayout OctoEqProcessor::createLayou
             group->addChild(std::make_unique<AudioParameterBool>(ParameterID { paramId(s, b, "on"), 1 }, prefix + "On", d.enabled));
             group->addChild(std::make_unique<AudioParameterChoice>(ParameterID { paramId(s, b, "type"), 1 }, prefix + "Type", filterTypeNames(), int(d.type)));
             group->addChild(std::make_unique<AudioParameterFloat>(ParameterID { paramId(s, b, "freq"), 1 }, prefix + "Freq", logRange(10.0f, 22000.0f, 0.0f), d.freq,
-                AudioParameterFloatAttributes().withLabel("Hz")));
+                AudioParameterFloatAttributes().withStringFromValueFunction(freqText).withValueFromStringFunction(freqFromText)));
             group->addChild(std::make_unique<AudioParameterFloat>(ParameterID { paramId(s, b, "gain"), 1 }, prefix + "Gain", NormalisableRange<float>(-15.0f, 15.0f, 0.01f), d.gainDb,
-                AudioParameterFloatAttributes().withLabel("dB")));
-            group->addChild(std::make_unique<AudioParameterFloat>(ParameterID { paramId(s, b, "q"), 1 }, prefix + "Q", logRange(0.1f, 18.0f, 0.0f), d.q));
+                AudioParameterFloatAttributes().withStringFromValueFunction(dbText)));
+            group->addChild(std::make_unique<AudioParameterFloat>(ParameterID { paramId(s, b, "q"), 1 }, prefix + "Q", logRange(0.1f, 18.0f, 0.0f), d.q,
+                AudioParameterFloatAttributes().withStringFromValueFunction([](float v, int) { return String(v, 2); })));
             layout.add(std::move(group));
         }
     layout.add(std::make_unique<AudioParameterChoice>(ParameterID { "mode", 1 }, "Mode", StringArray { "Stereo", "L/R", "M/S" }, 0));
     layout.add(std::make_unique<AudioParameterChoice>(ParameterID { "edit", 1 }, "Edit", StringArray { "A", "B" }, 0));
     layout.add(std::make_unique<AudioParameterFloat>(ParameterID { "scale", 1 }, "Scale", NormalisableRange<float>(-200.0f, 200.0f, 0.1f), 100.0f,
-        AudioParameterFloatAttributes().withLabel("%")));
+        AudioParameterFloatAttributes().withStringFromValueFunction([](float v, int) { return String(roundToInt(v)) + " %"; })));
     layout.add(std::make_unique<AudioParameterFloat>(ParameterID { "output", 1 }, "Output", NormalisableRange<float>(-24.0f, 24.0f, 0.01f), 0.0f,
-        AudioParameterFloatAttributes().withLabel("dB")));
+        AudioParameterFloatAttributes().withStringFromValueFunction(dbText)));
     layout.add(std::make_unique<AudioParameterBool>(ParameterID { "hiq", 1 }, "Hi-Q", false));
     return layout;
 }
