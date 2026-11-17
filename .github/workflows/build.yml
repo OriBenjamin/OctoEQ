@@ -1,0 +1,80 @@
+name: Build macOS (Apple Silicon)
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache JUCE download
+        uses: actions/cache@v4
+        with:
+          path: build/_deps
+          key: juce-8.0.4-${{ runner.os }}
+
+      - name: Configure
+        run: >
+          cmake -S . -B build
+          -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_OSX_ARCHITECTURES=arm64
+          -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0
+
+      - name: Build plug-ins and tests
+        run: >
+          cmake --build build --config Release -j 4 --target
+          OctoEQ_AU OctoEQ_VST3
+          octoeq_tests octoeq_engine_tests octoeq_proc_tests octoeq_editor_tests
+
+      - name: Run tests
+        run: |
+          ./build/octoeq_tests
+          ./build/octoeq_engine_tests
+          ./build/octoeq_proc_tests
+          cd build && ./octoeq_editor_tests
+
+      - name: Ad-hoc sign
+        run: |
+          ART=build/OctoEQ_artefacts/Release
+          codesign --force --deep --sign - "$ART/AU/OctoEQ.component"
+          codesign --force --deep --sign - "$ART/VST3/OctoEQ.vst3"
+          lipo -info "$ART/AU/OctoEQ.component/Contents/MacOS/OctoEQ"
+          lipo -info "$ART/VST3/OctoEQ.vst3/Contents/MacOS/OctoEQ"
+
+      - name: Validate Audio Unit (auval)
+        run: |
+          mkdir -p ~/Library/Audio/Plug-Ins/Components
+          cp -R build/OctoEQ_artefacts/Release/AU/OctoEQ.component ~/Library/Audio/Plug-Ins/Components/
+          killall -9 AudioComponentRegistrar 2>/dev/null || true
+          sleep 2
+          auval -v aufx Ocqe Octo | tee auval.log
+          grep -q "AU VALIDATION SUCCEEDED" auval.log
+
+      - name: Package
+        run: |
+          mkdir -p dist/OctoEQ
+          cp -R build/OctoEQ_artefacts/Release/AU/OctoEQ.component dist/OctoEQ/
+          cp -R build/OctoEQ_artefacts/Release/VST3/OctoEQ.vst3 dist/OctoEQ/
+          cp packaging/install.command README.md dist/OctoEQ/
+          chmod +x dist/OctoEQ/install.command
+          cd dist && ditto -c -k --keepParent OctoEQ OctoEQ-macOS-arm64.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: OctoEQ-macOS-arm64
+          path: dist/OctoEQ-macOS-arm64.zip
+          if-no-files-found: error
+
+      - name: Publish release with the zip
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete latest --yes --cleanup-tag || true
+          gh release create latest dist/OctoEQ-macOS-arm64.zip --title "OctoEQ (latest build)" --notes "Built from ${GITHUB_SHA::7}. See README for install steps."
+
+permissions:
+  contents: write
