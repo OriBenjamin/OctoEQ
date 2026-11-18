@@ -63,10 +63,15 @@ void EqEngine::setBand(int set, int band, const BandSettings& in) {
         // Structural change: jump straight to the new settings and clear state on
         // every channel that might use this set (avoids unstable state carry-over).
         cur[set][band] = { std::log(double(s.freq)), double(s.gainDb), double(s.q) };
-        for (auto& ch : filt) for (auto& st : ch[band]) st.reset();
+        // Only reset channels that actually run this set in the current mode.
+        for (int c = 0; c < 2; ++c)
+            if (setForChannel(c) == set)
+                for (auto& st : filt[c][band]) st.reset();
         updateCoeffs(set, band);
     }
 }
+
+int EqEngine::setForChannel(int ch) const { return (ch == 0 || mode == ModeStereo) ? 0 : 1; }
 
 void EqEngine::setMode(int m) {
     m = std::clamp(m, 0, 2);
@@ -122,7 +127,7 @@ void EqEngine::process(float* const* ch, int numCh, int numSamples) {
     if (numSamples <= 0 || numCh <= 0 || ch == nullptr) return;
     const int nch = std::min(numCh, 2);
     const bool ms = mode == ModeMS && nch == 2;
-    const int setFor[2] = { 0, (mode == ModeStereo || nch < 2) ? 0 : 1 };
+    const int setFor[2] = { 0, nch < 2 ? 0 : setForChannel(1) };
 
     for (int start = 0; start < numSamples; start += kSubBlock) {
         const int n = std::min(kSubBlock, numSamples - start);

@@ -87,4 +87,10 @@ TEST(spectrum_receives_audio) {
     CHECK(n == 512);
 }
 
+TEST(edit_not_automatable) {
+    OctoEqProcessor p;
+    CHECK(!p.apvts.getParameter("edit")->isAutomatable());
+    CHECK(p.apvts.getParameter("mode")->isAutomatable());
+}
+
 int main() { juce::ScopedJuceInitialiser_GUI init; return runAll(); }

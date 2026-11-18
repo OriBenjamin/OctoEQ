@@ -37,6 +37,7 @@ public:
 
 private:
     struct Smoothed { double logFreq = 0, gain = 0, q = 0; };
+    int setForChannel(int ch) const;
     void snapSmoothing();
     bool advanceSmoothing(int samples);
     void updateCoeffs(int set, int band);

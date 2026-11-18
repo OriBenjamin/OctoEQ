@@ -44,6 +44,10 @@ double EqDisplay::displayRate() const {
     return sr > 0 ? sr : 48000.0;
 }
 
+double EqDisplay::curveRate() const {
+    return displayRate() * (proc.apvts.getRawParameterValue("hiq")->load() > 0.5f ? 2.0 : 1.0);
+}
+
 juce::Point<float> EqDisplay::nodePosition(int band) const {
     const auto b = readBand(activeSet(), band);
     const float w = float(getWidth()), h = float(getHeight());
@@ -214,7 +218,7 @@ void EqDisplay::drawCurves(juce::Graphics& g) {
     const float w = float(getWidth()), h = float(getHeight());
     const int set = activeSet();
     const float scale = proc.apvts.getRawParameterValue("scale")->load() / 100.0f;
-    const double sr = displayRate();
+    const double sr = curveRate();
     BandSettings bands[kNumBands];
     for (int b = 0; b < kNumBands; ++b) bands[b] = readBand(set, b);
 

@@ -22,6 +22,7 @@ public:
     void setSelectedBand(int band);
     int getSelectedBand() const { return selected; }
     std::function<void(int)> onBandSelected;
+    double curveRate() const;                      // rate the audio is EQ'd at (x2 with Hi-Q)
     void updateSpectrum();                         // pull analyser samples and recompute
 
     void paint(juce::Graphics&) override;

@@ -101,4 +101,20 @@ TEST(param_jump) {
     CHECK_NEAR(rmsDb(l, N - 2400) - 20 * std::log10(0.25 / std::sqrt(2.0)), 15.0, 0.3);
 }
 
+TEST(set_b_type_change_keeps_a_channel) {
+    auto run = [](bool change) {
+        EqEngine e; e.prepare(48000, 512); e.setMode(ModeLR);
+        BandSettings a = defaultBand(4); a.freq = 300; a.gainDb = 9; a.q = 4; e.setBand(0, 4, a);
+        std::vector<float> l(4096), r(4096);
+        for (int i = 0; i < 4096; ++i) l[i] = r[i] = 0.2f * float(std::sin(2 * kPi * 300 * i / 48000.0));
+        float* ch[2] = { l.data(), r.data() }; e.process(ch, 2, 2048);
+        if (change) { BandSettings b = defaultBand(4); b.type = FilterType::Notch; e.setBand(1, 4, b); }
+        float* ch2[2] = { l.data() + 2048, r.data() + 2048 }; e.process(ch2, 2, 2048);
+        return l;
+    };
+    auto ref = run(false), changed = run(true);
+    float maxDiff = 0; for (size_t i = 0; i < ref.size(); ++i) maxDiff = std::max(maxDiff, std::fabs(ref[i] - changed[i]));
+    CHECK(maxDiff == 0.0f);
+}
+
 int main() { return runAll(); }

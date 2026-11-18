@@ -62,7 +62,8 @@ juce::AudioProcessorValueTreeState::ParameterLayout OctoEqProcessor::createLayou
             layout.add(std::move(group));
         }
     layout.add(std::make_unique<AudioParameterChoice>(ParameterID { "mode", 1 }, "Mode", StringArray { "Stereo", "L/R", "M/S" }, 0));
-    layout.add(std::make_unique<AudioParameterChoice>(ParameterID { "edit", 1 }, "Edit", StringArray { "A", "B" }, 0));
+    layout.add(std::make_unique<AudioParameterChoice>(ParameterID { "edit", 1 }, "Edit", StringArray { "A", "B" }, 0,
+        AudioParameterChoiceAttributes().withAutomatable(false)));
     layout.add(std::make_unique<AudioParameterFloat>(ParameterID { "scale", 1 }, "Scale", NormalisableRange<float>(-200.0f, 200.0f, 0.1f), 100.0f,
         AudioParameterFloatAttributes().withStringFromValueFunction([](float v, int) { return String(roundToInt(v)) + " %"; })));
     layout.add(std::make_unique<AudioParameterFloat>(ParameterID { "output", 1 }, "Output", NormalisableRange<float>(-24.0f, 24.0f, 0.01f), 0.0f,

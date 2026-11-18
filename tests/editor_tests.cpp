@@ -64,4 +64,12 @@ TEST(editor_snapshot) {
     ed.setSize(700, 400); CHECK(ed.createComponentSnapshot(ed.getLocalBounds()).isValid());
 }
 
+TEST(curve_rate_follows_hiq) {
+    OctoEqProcessor p; p.setPlayConfigDetails(2, 2, 44100, 256); p.prepareToPlay(44100, 256);
+    OctoEqEditor ed(p); ed.setSize(900, 480);
+    CHECK_NEAR(ed.display().curveRate(), 44100, 0);
+    setParam(p, "hiq", 1);
+    CHECK_NEAR(ed.display().curveRate(), 88200, 0);
+}
+
 int main() { juce::ScopedJuceInitialiser_GUI init; return runAll(); }
