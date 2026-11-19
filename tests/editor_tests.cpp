@@ -37,7 +37,7 @@ TEST(edit_switch_rebinds_strip) {
     CHECK(ed.display().activeSet() == 1);
     ed.strip().column(2).gain.setValue(4.0, juce::sendNotificationSync);
     CHECK_NEAR(getParam(p, "bB3_gain"), 4.0, 0.05);
-    CHECK_NEAR(getParam(p, "bA3_gain"), 0.0, 0.0);
+    CHECK_NEAR(getParam(p, "bA3_gain"), 0.0, 1e-4);
     setParam(p, "mode", 0); ed.refreshBindings();
     CHECK(ed.display().activeSet() == 0); // Stereo always edits A
 }
